@@ -2,13 +2,10 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
-import sys
 from ..utils.ollama_client import ollama_client
 from ..config.settings import model_config
 from rich.console import Console
 from rich.panel import Panel
-from rich.live import Live
-from rich.text import Text
 
 console = Console()
 
@@ -106,7 +103,10 @@ class BaseAgent(ABC):
                 console.print(f"\n[bold cyan]🤖 {self.model}[/bold cyan] [dim]sedang menulis...[/dim]")
                 console.print("[dim]" + "─" * 70 + "[/dim]\n")
             
-            # Use sys.stdout for immediate output
+            # Stream output with word-level buffering for better readability
+            # Accumulate characters until we hit a space, then print the complete word
+            word_buffer = ""
+            
             for chunk in stream:
                 if 'message' in chunk and 'content' in chunk['message']:
                     content = chunk['message']['content']
@@ -114,17 +114,23 @@ class BaseAgent(ABC):
                     char_count += len(content)
                     
                     if display_live:
-                        # Print directly to stdout for immediate display
-                        sys.stdout.write(content)
-                        sys.stdout.flush()  # Force immediate output
+                        word_buffer += content
+                        
+                        # Print when we have a complete word (space, newline, or punctuation followed by space)
+                        if ' ' in word_buffer or '\n' in word_buffer:
+                            print(word_buffer, end='', flush=True)
+                            word_buffer = ""
+            
+            # Print any remaining buffer
+            if display_live and word_buffer:
+                print(word_buffer, end='', flush=True)
             
             if display_live:
                 # Count final words
                 word_count = len(full_response.split())
                 
-                # New line and completion message
-                sys.stdout.write('\n')
-                sys.stdout.flush()
+                # New line after streaming
+                print()  # Simple newline
                 
                 if show_progress:
                     console.print(f"\n[dim]{'─' * 70}[/dim]")
