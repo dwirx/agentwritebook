@@ -26,7 +26,9 @@ class WriterAgent(BaseAgent):
         chapter_info: Dict,
         book_context: Dict,
         writing_style: str = "engaging",
-        min_words: int = 1500
+        min_words: int = 1500,
+        enable_streaming: bool = False,
+        language: str = "indonesian"
     ) -> Dict:
         """
         Tulis konten chapter.
@@ -36,6 +38,7 @@ class WriterAgent(BaseAgent):
             book_context: Context buku (title, genre, synopsis, dll)
             writing_style: Style penulisan (engaging, formal, casual, dll)
             min_words: Minimum jumlah kata
+            enable_streaming: Enable streaming output
 
         Returns:
             Dictionary berisi konten chapter dan metadata
@@ -54,11 +57,11 @@ class WriterAgent(BaseAgent):
 
         if is_fiction:
             content = self._write_fiction_chapter(
-                chapter_info, book_context, writing_style, min_words
+                chapter_info, book_context, writing_style, min_words, enable_streaming, language
             )
         else:
             content = self._write_nonfiction_chapter(
-                chapter_info, book_context, writing_style, min_words
+                chapter_info, book_context, writing_style, min_words, enable_streaming, language
             )
 
         # Hitung statistik
@@ -83,15 +86,31 @@ class WriterAgent(BaseAgent):
         chapter_info: Dict,
         book_context: Dict,
         writing_style: str,
-        min_words: int
+        min_words: int,
+        enable_streaming: bool = False,
+        language: str = "indonesian"
     ) -> str:
         """Tulis chapter untuk buku fiksi."""
-        system_prompt = self.create_system_prompt(
-            f"Kamu adalah seorang novelis berbakat dengan {writing_style} writing style. "
-            "Tugasmu adalah menulis chapter yang immersive dengan dialog yang natural, "
-            "deskripsi yang vivid, dan pacing yang baik. "
-            "Gunakan 'show, don't tell' dan buat pembaca terlibat secara emosional."
-        )
+        
+        # Language-specific system prompts
+        if language.lower() in ["english", "en", "inggris"]:
+            system_prompt = self.create_system_prompt(
+                f"You are a talented novelist with an {writing_style} writing style. "
+                "Your task is to write an immersive chapter with natural dialogue, "
+                "vivid descriptions, and good pacing. "
+                "Use 'show, don't tell' technique and engage readers emotionally. "
+                "Write professionally with rich vocabulary and compelling narrative flow."
+            )
+            lang_instruction = "Write in fluent, professional English with rich vocabulary and engaging narrative."
+        else:
+            system_prompt = self.create_system_prompt(
+                f"Kamu adalah seorang novelis berbakat dengan {writing_style} writing style. "
+                "Tugasmu adalah menulis chapter yang immersive dengan dialog yang natural, "
+                "deskripsi yang vivid, dan pacing yang baik. "
+                "Gunakan 'show, don't tell' dan buat pembaca terlibat secara emosional. "
+                "Tulis dengan profesional menggunakan kosakata yang kaya dan alur naratif yang menarik."
+            )
+            lang_instruction = "Tulis dalam bahasa Indonesia yang fasih dan profesional dengan kosakata kaya dan narasi yang engaging."
 
         # Ambil informasi dari context
         title = book_context.get('title', '')
@@ -111,7 +130,48 @@ class WriterAgent(BaseAgent):
             for char in characters[:3]:  # Ambil 3 karakter utama
                 char_info += f"- {char.get('name', '')}: {char.get('description', '')}\n"
 
-        user_prompt = f"""
+        if language.lower() in ["english", "en", "inggris"]:
+            user_prompt = f"""
+Write Chapter {chapter_num} of the following novel:
+
+BOOK INFORMATION:
+Title: {title}
+Synopsis: {synopsis}
+Setting: {setting}
+{char_info}
+
+CHAPTER INFO:
+Chapter Title: {chapter_title}
+Description: {description}
+Key Events: {', '.join(key_events) if key_events else 'Develop according to story flow'}
+
+WRITING INSTRUCTIONS:
+1. Write minimum {min_words} words
+2. Use {writing_style} style
+3. Create natural and meaningful dialogue that reveals character
+4. Use vivid, sensory descriptions (show, don't tell)
+5. Maintain good pacing with balance between action, dialogue, and description
+6. Show character emotions through actions, thoughts, and dialogue
+7. Include internal character thoughts and motivations
+8. Use varied sentence structures for rhythm
+9. Build tension and conflict naturally
+10. End with a compelling hook that makes readers want to continue
+11. Use literary devices: metaphors, symbolism, foreshadowing where appropriate
+12. Create immersive atmosphere with sensory details
+
+QUALITY STANDARDS:
+- Rich, varied vocabulary
+- Smooth narrative flow
+- Consistent character voice
+- Clear scene transitions
+- Emotional depth and nuance
+- Professional literary quality
+
+Don't write "Chapter X:" or chapter title at the beginning - start the story directly.
+{lang_instruction}
+"""
+        else:
+            user_prompt = f"""
 Tulis Chapter {chapter_num} dari novel berikut:
 
 INFORMASI BUKU:
@@ -120,7 +180,7 @@ Synopsis: {synopsis}
 Setting: {setting}
 {char_info}
 
-CHAPTER INFO:
+INFO CHAPTER:
 Judul Chapter: {chapter_title}
 Deskripsi: {description}
 Key Events: {', '.join(key_events) if key_events else 'Dikembangkan sesuai alur cerita'}
@@ -128,14 +188,27 @@ Key Events: {', '.join(key_events) if key_events else 'Dikembangkan sesuai alur 
 INSTRUKSI PENULISAN:
 1. Tulis minimal {min_words} kata
 2. Gunakan {writing_style} style
-3. Buat dialog yang natural dan meaningful
-4. Deskripsi yang vivid tapi tidak berlebihan
-5. Maintain pacing yang baik
-6. Tunjukkan emosi karakter melalui actions dan dialog
-7. End dengan hook yang membuat pembaca ingin lanjut ke chapter berikutnya
+3. Buat dialog yang natural dan meaningful yang mengungkapkan karakter
+4. Gunakan deskripsi yang vivid dan sensorik (show, don't tell)
+5. Jaga pacing yang baik dengan keseimbangan action, dialog, dan deskripsi
+6. Tunjukkan emosi karakter melalui actions, pikiran, dan dialog
+7. Sertakan pikiran internal dan motivasi karakter
+8. Gunakan variasi struktur kalimat untuk ritme yang baik
+9. Bangun tension dan conflict secara natural
+10. Akhiri dengan hook yang kuat agar pembaca ingin lanjut
+11. Gunakan perangkat sastra: metafora, simbolisme, foreshadowing yang tepat
+12. Ciptakan atmosfer immersive dengan detail sensorik
+
+STANDAR KUALITAS:
+- Kosakata kaya dan bervariasi
+- Alur narasi yang smooth
+- Konsistensi karakter
+- Transisi scene yang jelas
+- Kedalaman dan nuansa emosional
+- Kualitas literari profesional
 
 Jangan menulis "Chapter X:" atau judul chapter di awal - langsung mulai cerita.
-Tulis dalam bahasa Indonesia yang baik dan menarik.
+{lang_instruction}
 """
 
         messages = [
@@ -143,8 +216,11 @@ Tulis dalam bahasa Indonesia yang baik dan menarik.
             {"role": "user", "content": user_prompt}
         ]
 
-        response = self.chat(messages, temperature=0.85)
-        content = response['message']['content']
+        if enable_streaming:
+            content = self.chat_stream(messages, temperature=0.85, display_live=True)
+        else:
+            response = self.chat(messages, temperature=0.85)
+            content = response['message']['content']
 
         return content.strip()
 
@@ -153,14 +229,29 @@ Tulis dalam bahasa Indonesia yang baik dan menarik.
         chapter_info: Dict,
         book_context: Dict,
         writing_style: str,
-        min_words: int
+        min_words: int,
+        enable_streaming: bool = False,
+        language: str = "indonesian"
     ) -> str:
         """Tulis chapter untuk buku non-fiksi."""
-        system_prompt = self.create_system_prompt(
-            f"Kamu adalah seorang penulis non-fiksi berpengalaman dengan {writing_style} writing style. "
-            "Tugasmu adalah menulis konten yang informatif, jelas, terstruktur dengan baik, "
-            "dan mudah dipahami. Gunakan contoh konkret dan actionable insights."
-        )
+        
+        # Language-specific system prompts
+        if language.lower() in ["english", "en", "inggris"]:
+            system_prompt = self.create_system_prompt(
+                f"You are an experienced non-fiction writer with an {writing_style} writing style. "
+                "Your task is to write informative, clear, well-structured content that's easy to understand. "
+                "Use concrete examples, actionable insights, and evidence-based information. "
+                "Write professionally with authority and credibility."
+            )
+            lang_instruction = "Write in clear, professional English with precise terminology and well-structured explanations."
+        else:
+            system_prompt = self.create_system_prompt(
+                f"Kamu adalah seorang penulis non-fiksi berpengalaman dengan {writing_style} writing style. "
+                "Tugasmu adalah menulis konten yang informatif, jelas, terstruktur dengan baik, "
+                "dan mudah dipahami. Gunakan contoh konkret, actionable insights, dan informasi berbasis bukti. "
+                "Tulis dengan profesional, kredibel, dan authoritative."
+            )
+            lang_instruction = "Tulis dalam bahasa Indonesia yang jelas dan profesional dengan terminologi tepat dan penjelasan terstruktur."
 
         # Ambil informasi dari context
         title = book_context.get('title', '')
@@ -210,8 +301,11 @@ Tulis konten yang valuable dan implementable!
             {"role": "user", "content": user_prompt}
         ]
 
-        response = self.chat(messages, temperature=0.8)
-        content = response['message']['content']
+        if enable_streaming:
+            content = self.chat_stream(messages, temperature=0.8, display_live=True)
+        else:
+            response = self.chat(messages, temperature=0.8)
+            content = response['message']['content']
 
         return content.strip()
 

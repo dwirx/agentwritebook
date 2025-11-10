@@ -33,7 +33,10 @@ class BookOrchestrator:
         additional_info: str = "",
         min_words_per_chapter: int = 1500,
         enable_review: bool = True,
-        auto_revise: bool = False
+        auto_revise: bool = False,
+        enable_streaming: bool = False,
+        custom_models: dict = None,
+        language: str = "indonesian"
     ) -> Dict:
         """
         Buat buku lengkap dari awal hingga akhir.
@@ -47,10 +50,20 @@ class BookOrchestrator:
             min_words_per_chapter: Minimum kata per chapter
             enable_review: Enable review untuk setiap chapter
             auto_revise: Auto revisi jika score rendah
+            enable_streaming: Enable streaming output untuk live preview
+            custom_models: Custom model configuration (optional)
 
         Returns:
             Dictionary berisi informasi buku dan path
         """
+        # Apply custom models if provided
+        if custom_models:
+            if 'planner' in custom_models:
+                self.planner.model = custom_models['planner']
+            if 'writer' in custom_models:
+                self.writer.model = custom_models['writer']
+            if 'reviewer' in custom_models:
+                self.reviewer.model = custom_models['reviewer']
         console.print(Panel(
             f"[bold cyan]Memulai proses penulisan buku[/bold cyan]\n"
             f"Topik: {topic}\n"
@@ -102,11 +115,21 @@ class BookOrchestrator:
 
                 try:
                     # Tulis chapter
+                    if enable_streaming:
+                        console.print(f"\n{'═' * 80}")
+                        console.print(f"[bold cyan]📖 Chapter {chapter_num}/{len(chapters)}: {chapter_title}[/bold cyan]")
+                        console.print(f"{'═' * 80}")
+                    
                     chapter_result = self.writer.execute(
                         chapter_info=chapter_info,
                         book_context=outline,
-                        min_words=min_words_per_chapter
+                        min_words=min_words_per_chapter,
+                        enable_streaming=enable_streaming,
+                        language=language
                     )
+                    
+                    if enable_streaming:
+                        console.print(f"\n{'═' * 80}\n")
 
                     # Review jika diaktifkan
                     if enable_review:
@@ -128,7 +151,9 @@ class BookOrchestrator:
                                 chapter_info,
                                 outline,
                                 review_result,
-                                min_words_per_chapter
+                                min_words_per_chapter,
+                                enable_streaming,
+                                language
                             )
 
                     # Simpan chapter
@@ -151,7 +176,17 @@ class BookOrchestrator:
                         'score': chapter_result.get('review', {}).get('overall_score', None)
                     })
 
-                    console.print(f"[green]✓[/green] Chapter {chapter_num} selesai")
+                    # Show completion with statistics
+                    wc = chapter_result.get('word_count', 0)
+                    score = chapter_result.get('review', {}).get('overall_score', 'N/A')
+                    
+                    console.print(f"[green]✓[/green] [bold green]Chapter {chapter_num} selesai![/bold green] "
+                                f"[cyan]{wc}[/cyan] kata • Score: [yellow]{score}[/yellow]/10")
+                    
+                    # Progress indicator
+                    progress_pct = (len(chapter_results) / len(chapters)) * 100
+                    progress_bar = "█" * int(progress_pct / 5) + "░" * (20 - int(progress_pct / 5))
+                    console.print(f"[dim]Progress: [{progress_bar}] {progress_pct:.1f}% ({len(chapter_results)}/{len(chapters)} chapters)[/dim]")
 
                 except Exception as e:
                     console.print(f"[red]✗[/red] Error pada Chapter {chapter_num}: {e}")
@@ -217,7 +252,9 @@ class BookOrchestrator:
         chapter_info: Dict,
         book_context: Dict,
         review_result: Dict,
-        min_words: int
+        min_words: int,
+        enable_streaming: bool = False,
+        language: str = "indonesian"
     ) -> Dict:
         """Revisi chapter berdasarkan feedback review."""
         # Untuk saat ini, tulis ulang dengan temperature yang berbeda
@@ -228,7 +265,9 @@ class BookOrchestrator:
         return revised_writer.execute(
             chapter_info=chapter_info,
             book_context=book_context,
-            min_words=min_words
+            min_words=min_words,
+            enable_streaming=enable_streaming,
+            language=language
         )
 
     def create_outline_only(

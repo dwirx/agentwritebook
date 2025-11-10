@@ -4,12 +4,14 @@ AI Agent untuk menulis buku fiksi dan non-fiksi menggunakan Ollama dengan arsite
 
 ## Fitur Utama
 
-- **Outline Otomatis**: Membuat struktur dan outline buku secara otomatis berdasarkan topik
-- **Multi-Genre**: Support untuk buku fiksi dan non-fiksi
-- **Multiple Agents**: Menggunakan agent khusus untuk planning, writing, dan reviewing
-- **Quality Control**: Built-in review system untuk memastikan kualitas konten
-- **Modular Architecture**: Struktur kode yang terorganisir dan mudah dikembangkan
-- **Output Markdown**: Semua output disimpan dalam format Markdown yang rapi
+- **🎯 Interactive Mode**: Wizard step-by-step yang user-friendly untuk membuat buku
+- **📝 Streaming Output**: Lihat proses penulisan secara real-time
+- **🎨 Genre Templates**: Template built-in untuk 11+ genre (Fantasy, Sci-Fi, Business, dll)
+- **🤖 Multiple Agents**: Menggunakan agent khusus untuk planning, writing, dan reviewing
+- **⚙️ Custom Models**: Pilih model Ollama sesuai kebutuhan untuk setiap agent
+- **✅ Quality Control**: Built-in review system dengan auto-revision
+- **📊 Smart Recommendations**: Rekomendasi jumlah chapter dan konfigurasi per genre
+- **📄 Output Markdown**: Semua output disimpan dalam format Markdown yang rapi
 
 ## Arsitektur Agent
 
@@ -63,20 +65,24 @@ agentwritebook/
 ### Install Ollama Models
 
 ```bash
-# Model untuk planner
-ollama pull gemma3:latest
+# Model default (Balanced Setup - Recommended) ⭐
+ollama pull gemma3:latest         # Planner
+ollama pull qwen2.5:3b            # Writer (fast & good)
+ollama pull kimi-k2:1t-cloud      # Reviewer
 
-# Model untuk writer
-ollama pull qwen2.5:3b
-
-# Model untuk reviewer (judge)
-ollama pull kimi-k2:1t-cloud
+# Model baru - Premium Quality (Optional) 🚀
+ollama pull gpt-oss:20b-cloud            # Very High quality (~12GB)
+ollama pull gpt-oss:120b-cloud           # Exceptional quality (~75GB)
+ollama pull deepseek-v3.1:671b-cloud     # Maximum quality (~400GB!)
+ollama pull glm-4.6:cloud                # Fast & high quality (~3GB)
 
 # Model tambahan (optional)
 ollama pull gemma3:1b
 ollama pull qwen3:1.7b
 ollama pull granite-embedding:latest
 ```
+
+**💡 Lihat [MODEL_MANAGEMENT.md](MODEL_MANAGEMENT.md) untuk panduan lengkap pemilihan model!**
 
 ### Install Project
 
@@ -112,15 +118,37 @@ class ModelConfig(BaseModel):
 
 ## Cara Penggunaan
 
-### 1. Membuat Buku Lengkap
+### 🎯 REKOMENDASI: Interactive Mode (Termudah!)
+
+Mode interaktif adalah cara terbaik untuk pemula. Wizard akan memandu Anda step-by-step:
 
 ```bash
-# Buku Fiksi
+writebook interactive
+```
+
+Fitur Interactive Mode:
+- ✅ Pilih dari 11+ genre template (Fantasy, Sci-Fi, Business, dll)
+- ✅ Rekomendasi otomatis jumlah chapter per genre
+- ✅ Pilih model custom atau gunakan default
+- ✅ Live streaming untuk melihat proses real-time
+- ✅ Validasi input otomatis
+
+**[📖 Baca Panduan Lengkap Interactive Mode](INTERACTIVE_MODE.md)**
+
+---
+
+### Cara Manual: Command Line
+
+#### 1. Membuat Buku Lengkap
+
+```bash
+# Buku Fiksi dengan Streaming
 writebook create "Petualangan di Dunia Fantasi" \
     --type fiction \
     --chapters 12 \
     --audience young_adult \
-    --min-words 2000
+    --min-words 2000 \
+    --stream
 
 # Buku Non-Fiksi
 writebook create "Panduan Python untuk Pemula" \
@@ -138,7 +166,7 @@ writebook outline "Misteri di Kota Tua" \
     --chapters 20
 ```
 
-### 3. Options Lengkap
+#### 3. Options Lengkap
 
 ```bash
 writebook create "Judul Buku" \
@@ -148,14 +176,49 @@ writebook create "Judul Buku" \
     --min-words 1500           # Minimum kata per chapter (default: 1500)
     --review                    # Enable review (default: true)
     --auto-revise              # Auto revisi jika score rendah (default: false)
+    --stream                   # Enable streaming output (NEW!)
     --info "Info tambahan"     # Informasi tambahan tentang buku
 ```
 
-### 4. Commands Lainnya
+#### 4. Lihat Model yang Tersedia
 
 ```bash
-# Lihat konfigurasi model
+# Lihat konfigurasi model saat ini
 writebook models
+
+# Lihat semua model yang tersedia di Ollama
+writebook models --available
+
+# Lihat rekomendasi model untuk setiap agent
+writebook models --recommended
+```
+
+#### 5. Model Management (NEW!)
+
+```bash
+# Tambah model custom
+writebook add-model gpt-oss:20b-cloud \
+  --role writer \
+  --size "~12GB" \
+  --speed Medium \
+  --quality "Very High"
+
+# Pilih model interaktif
+writebook select-model writer
+writebook select-model planner
+writebook select-model reviewer
+```
+
+**[📖 Panduan Lengkap Model Management](MODEL_MANAGEMENT.md)**
+
+#### 6. Commands Lainnya
+
+```bash
+# Mode interaktif (RECOMMENDED!)
+writebook interactive
+
+# Membuat outline saja
+writebook outline "Judul Buku" --type fiction
 
 # Lihat informasi aplikasi
 writebook info
@@ -163,6 +226,9 @@ writebook info
 # Help
 writebook --help
 writebook create --help
+writebook interactive --help
+writebook add-model --help
+writebook select-model --help
 ```
 
 ## Output

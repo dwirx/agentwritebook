@@ -2,6 +2,8 @@
 
 Panduan cepat untuk mulai menggunakan Book Writing Agent.
 
+> 🎯 **NEW!** Sekarang ada **Interactive Mode** - cara termudah untuk membuat buku!
+
 ## Setup (5 menit)
 
 ### 1. Install Ollama
@@ -39,9 +41,37 @@ writebook info
 
 ## Penggunaan Pertama
 
-### Buat Buku Pertama Anda
+### 🎯 Cara 1: Interactive Mode (RECOMMENDED!)
+
+Cara termudah untuk pemula - wizard akan memandu Anda:
 
 ```bash
+writebook interactive
+```
+
+Wizard akan menanyakan:
+1. Tipe buku (Fiction/Non-Fiction)
+2. Genre (Fantasy, Sci-Fi, Business, dll) 
+3. Judul buku
+4. Jumlah chapter (ada rekomendasi)
+5. Target audience
+6. Opsi streaming (lihat proses real-time!)
+
+**[📖 Panduan Lengkap Interactive Mode](INTERACTIVE_MODE.md)**
+
+---
+
+### 📝 Cara 2: Command Line (Untuk yang sudah familiar)
+
+```bash
+# Dengan streaming (lihat proses real-time)
+writebook create "Petualangan Pertamaku" \
+    --type fiction \
+    --chapters 5 \
+    --min-words 1000 \
+    --stream
+
+# Tanpa streaming (lebih cepat)
 writebook create "Petualangan Pertamaku" \
     --type fiction \
     --chapters 5 \
