@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentwritebook"
+version = "0.1.0"
+description = "AI Agent untuk menulis buku fiksi dan non-fiksi menggunakan Ollama"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "ollama>=0.4.0",
+    "pydantic>=2.0.0",
+    "rich>=13.0.0",
+    "typer>=0.9.0",
+]
+
+[project.scripts]
+writebook = "agentwritebook.main:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agentwritebook*"]
+exclude = ["output*", "*.egg-info", ".venv*", ".git*"]
